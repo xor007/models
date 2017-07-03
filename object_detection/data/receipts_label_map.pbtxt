@@ -1,0 +1,39 @@
+item {
+  id: 0
+  name: 'none_of_the_above'
+}
+
+item {
+  id: 1
+  name: 'sukcode'
+}
+
+item {
+  id: 2
+  name: 'description'
+}
+
+item {
+  id: 3
+  name: 'quantity'
+}
+
+item {
+  id: 4
+  name: 'unitprice'
+}
+
+item {
+  id: 5
+  name: 'exclvat'
+}
+
+item {
+  id: 6
+  name: 'discountr'
+}
+
+item {
+  id: 7
+  name: 'linetotal'
+}
