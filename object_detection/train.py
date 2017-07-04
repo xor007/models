@@ -99,8 +99,10 @@ def get_configs_from_pipeline_file():
     input_config: input_reader_pb2.InputReader
   """
   pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
+  from os.path import expanduser
+  home = expanduser("~")
   with tf.gfile.GFile(FLAGS.pipeline_config_path, 'r') as f:
-    text_format.Merge(f.read(), pipeline_config)
+    text_format.Merge(f.read().replace('~', home), pipeline_config)
 
   model_config = pipeline_config.model
   train_config = pipeline_config.train_config

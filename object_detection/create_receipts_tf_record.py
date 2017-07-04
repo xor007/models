@@ -143,42 +143,43 @@ def dict_to_tf_example(data,
 
 import os
 
+def process_and_store_set(set_name):
+    from os.path import expanduser
+    home = expanduser("~")
+    base_dir = os.path.join(home, 'Documents', 'Masters')
+    data_dir = os.path.join(base_dir, 'FNG2017', 'VOCdevkit')
+    output_dir = os.path.join(base_dir, 'github', 'models', 'object_detection', 'data')
+    output_path = '%s/receipts_%s.record' % (output_dir, set_name)
+    writer = tf.python_io.TFRecordWriter(output_path)
+
+    label_map_dict = label_map_util.get_label_map_dict(FLAGS.label_map_path)
+    years = ['VOC2007']
+
+    for year in years:
+        logging.info('Reading from WITS %s receipts dataset.', year)
+        examples_path = os.path.join(data_dir, year, 'ImageSets', 'Main',
+                                     'description_' + set_name + '.txt')
+        annotations_dir = os.path.join(data_dir, year, FLAGS.annotations_dir)
+        examples_list = dataset_util.read_examples_list(examples_path)
+        for idx, example in enumerate(examples_list):
+            if idx % 100 == 0:
+                logging.info('On image %d of %d', idx, len(examples_list))
+            path = os.path.join(annotations_dir, example + '.xml')
+            with tf.gfile.GFile(path, 'r') as fid:
+                xml_str = fid.read()
+            xml = etree.fromstring(xml_str)
+            data = dataset_util.recursive_parse_xml_to_dict(xml)['annotation']
+
+            tf_example = dict_to_tf_example(data, data_dir, label_map_dict,
+                                            FLAGS.ignore_difficult_instances)
+            writer.write(tf_example.SerializeToString())
+
+    writer.close()
+
+
 def main(_):
-  if FLAGS.set not in SETS:
-    raise ValueError('set must be in : {}'.format(SETS))
-  if FLAGS.year not in YEARS:
-    raise ValueError('year must be in : {}'.format(YEARS))
-
-  data_dir = '%s/data' % os.path.dirname(os.path.abspath(__file__))
-  years = ['VOC2007']
-  if FLAGS.year != 'merged':
-    years = [FLAGS.year]
-
-  writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
-
-  label_map_dict = label_map_util.get_label_map_dict(FLAGS.label_map_path)
-
-  for year in years:
-    logging.info('Reading from PASCAL %s dataset.', year)
-    examples_path = os.path.join(data_dir, year, 'ImageSets', 'Main',
-                                 'description_' + FLAGS.set + '.txt')
-    annotations_dir = os.path.join(data_dir, year, FLAGS.annotations_dir)
-    examples_list = dataset_util.read_examples_list(examples_path)
-    for idx, example in enumerate(examples_list):
-      if idx % 100 == 0:
-        logging.info('On image %d of %d', idx, len(examples_list))
-      path = os.path.join(annotations_dir, example + '.xml')
-      with tf.gfile.GFile(path, 'r') as fid:
-        xml_str = fid.read()
-      xml = etree.fromstring(xml_str)
-      data = dataset_util.recursive_parse_xml_to_dict(xml)['annotation']
-
-      tf_example = dict_to_tf_example(data, FLAGS.data_dir, label_map_dict,
-                                      FLAGS.ignore_difficult_instances)
-      writer.write(tf_example.SerializeToString())
-
-  writer.close()
-
+  process_and_store_set('train')
+  process_and_store_set('val')
 
 if __name__ == '__main__':
   tf.app.run()
