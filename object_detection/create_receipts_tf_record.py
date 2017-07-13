@@ -146,7 +146,7 @@ import os
 def process_and_store_set(set_name):
     from os.path import expanduser
     home = expanduser("~")
-    base_dir = os.path.join(home, 'Documents', 'Masterse')
+    base_dir = os.path.join(home, 'models')
     data_dir = os.path.join(home, 'msc2017', 'FNG2017', 'VOCdevkit')
     output_dir = os.path.join(base_dir, 'github', 'models', 'object_detection', 'data')
     output_path = '%s/receipts_%s.record' % (output_dir, set_name)
