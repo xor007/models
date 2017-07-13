@@ -148,7 +148,7 @@ def process_and_store_set(set_name):
     home = expanduser("~")
     base_dir = os.path.join(home, 'models')
     data_dir = os.path.join(home, 'msc2017', 'FNG2017', 'VOCdevkit')
-    output_dir = os.path.join(base_dir, 'models', 'object_detection', 'data')
+    output_dir = os.path.join(base_dir, 'object_detection', 'data')
     output_path = '%s/receipts_%s.record' % (output_dir, set_name)
     writer = tf.python_io.TFRecordWriter(output_path)
 
