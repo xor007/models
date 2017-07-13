@@ -146,14 +146,14 @@ import os
 def process_and_store_set(set_name):
     from os.path import expanduser
     home = expanduser("~")
-    base_dir = os.path.join(home, 'Documents', 'Masters')
-    data_dir = os.path.join(base_dir, 'FNG2017', 'VOCdevkit')
+    base_dir = os.path.join(home, 'Documents', 'Masterse')
+    data_dir = os.path.join(home, 'msc2017', 'FNG2017', 'VOCdevkit')
     output_dir = os.path.join(base_dir, 'github', 'models', 'object_detection', 'data')
     output_path = '%s/receipts_%s.record' % (output_dir, set_name)
     writer = tf.python_io.TFRecordWriter(output_path)
 
     label_map_dict = label_map_util.get_label_map_dict(FLAGS.label_map_path)
-    years = ['VOC2007']
+    years = ['FNG2017']
 
     for year in years:
         logging.info('Reading from WITS %s receipts dataset.', year)
