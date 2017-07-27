@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+SUPPORTED_GPUS='None'
+ub='ubuntu'
+
+echo "checking machine type..."
+gpu=$(lspci | grep -i nvidia)
+echo "NVidia GPU: $gpu"
+
+cpu=$(uname -m)
+echo "CPU arch: $cpu"
+echo $cpu | grep "64" || echo 'Only 64 bits machines are supported' #&& exit 1
+
+os=$(cat /etc/issue*)
+echo "OS Release: $os"
+echo $os | grep -i "$ub" | grep "16.04" || echo 'Only Ubuntu 16.04 is supported' #&& exit 1
+read t
+
+sudo apt-get update
+sudo apt-get -y install gcc build-essential cmake
+gcc_v=$(gcc --version)
+echo "GCC Version: $gcc_v"
+read t
+#echo $gcc_v | grep "5" || echo 'Only GCC v5 is supported' && exit 1
+
+downloadnv(){
+    echo "copying files..."
+}
+
+install_nvidia(){
+    echo "Installing Linux headers..."
+    sudo apt-get -y install linux-headers-$(uname -r)
+    echo "Downloading NDVidia..."
+    downloadnv
+    echo "Installing CUDNN..."
+    echo "Installing Cuda..."
+    sudo dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+    sudo apt-get update
+    sudo apt-get -y install cuda
+}
+
+echo $SUPPORTED_GPUS | grep $gpu && echo 'GPU Supported, Installing...' && install_nvidia
+read t
+
+# clone repo
+git clone https://github.com/tensorflow/tensorflow
+read t
+
+# select branch
+cd tensorflow
+git checkout r1.1
+
+# install Python dependencies
+sudo apt-get -y install python-numpy python-dev python-pip python-wheel
+read t
+
+# (optional) nvidia deps
+sudo apt-get -y install libcupti-dev
+read t
+
+# bazel deps
+sudo pip install six numpy wheel
+read t
+
+install_bazel(){
+    sudo apt-get -y install openjdk-8-jdk
+    echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+    curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+    sudo apt-get update && sudo apt-get -y install bazel
+    sudo apt-get -y upgrade bazel
+}
+
+# bazel
+install_bazel
+read t
+
+echo 'configuring tf ...'
+./configure
+read t
+
+config_gpu(){
+    bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
+}
+
+config_no_gpu(){
+    bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
+}
+
+echo 'configuring pip package build...'
+echo $SUPPORTED_GPUS | grep $gpu && echo 'GPU Supported, cnfguring...' && config_gpu || echo 'CPU only!' && config_no_gpu
+read t
+
+# special settings:
+# low RAM
+# --local_resources 2048,.5,1.0
+# support olde ABI
+# --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0"
+
+# build pip package
+bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
+read t
+# install pip package
+sudo pip install /tmp/tensorflow_pkg/tensorflow-1.2.1-py2-none-any.whl
+read t
+
+
+# Test
+
+cat <<'EOF' > tf_hello
+import tensorflow as tf
+hello = tf.constant('Hello, TensorFlow!')
+sess = tf.Session()
+print(sess.run(hello))
+EOF
+
+python tf_hello
